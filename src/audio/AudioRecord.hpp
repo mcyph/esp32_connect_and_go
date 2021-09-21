@@ -6,7 +6,7 @@
 #include <string.h>;
 #include <SPIFFS.h>;
 #include "Adafruit_VS1053.h";
-#include "ESPVS1003/ESPVS1003/ESPVS1003.h";
+//#include "../../lib/ESPVS1003/ESPVS1003.h";
 
 #define RECBUFFSIZE 128  // 64 or 128 bytes.
 

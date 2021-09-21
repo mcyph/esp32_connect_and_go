@@ -6,12 +6,6 @@
 
 SPIClass mySPI;
 
-// VS1003 SCI Write Command byte is 0x02
-#define VS_WRITE_COMMAND 0x02
-
-// VS1003 SCI Read COmmand byte is 0x03
-#define VS_READ_COMMAND  0x03
-
 // Size of the "wav" file set to 100*512 bytes including the header files
 const unsigned char RIFFHeader0fn[] = {
     'R' , 'I' , 'F' , 'F' , // Chunk ID (RIFF)
@@ -52,41 +46,44 @@ bool ctrlBtnReleased = false;
 
 // SCI Registers
 
-const uint8_t SCI_MODE = 0x0;
-const uint8_t SCI_STATUS = 0x1;
-const uint8_t SCI_BASS = 0x2;
-const uint8_t SCI_CLOCKF = 0x3;
-const uint8_t SCI_DECODE_TIME = 0x4;
-const uint8_t SCI_AUDATA = 0x5;
-const uint8_t SCI_WRAM = 0x6;
-const uint8_t SCI_WRAMADDR = 0x7;
-const uint8_t SCI_HDAT0 = 0x8;
-const uint8_t SCI_HDAT1 = 0x9;
-const uint8_t SCI_AIADDR = 0xa;
-const uint8_t SCI_VOL = 0xb;
-const uint8_t SCI_AICTRL0 = 0xc;
-const uint8_t SCI_AICTRL1 = 0xd;
-const uint8_t SCI_AICTRL2 = 0xe;
-const uint8_t SCI_AICTRL3 = 0xf;
-const uint8_t SCI_num_registers = 0xf;
+typedef enum SCI_REGISTER: uint8_t {
+  MODE = 0x0,
+  STATUS = 0x1,
+  BASS = 0x2,
+  CLOCKF = 0x3,
+  DECODE_TIME = 0x4,
+  AUDATA = 0x5,
+  WRAM = 0x6,
+  WRAMADDR = 0x7,
+  HDAT0 = 0x8,
+  HDAT1 = 0x9,
+  AIADDR = 0xa,
+  VOL = 0xb,
+  AICTRL0 = 0xc,
+  AICTRL1 = 0xd,
+  AICTRL2 = 0xe,
+  AICTRL3 = 0xf,
+  num_registers = 0xf
+};
 
 // SCI_MODE bits
-
-const uint8_t SM_DIFF = 0;
-const uint8_t SM_LAYER12 = 1;
-const uint8_t SM_RESET = 2;
-const uint8_t SM_OUTOFWAV = 3;
-const uint8_t SM_EARSPEAKER_LO = 4;
-const uint8_t SM_TESTS = 5;
-const uint8_t SM_STREAM = 6;
-const uint8_t SM_EARSPEAKER_HI = 7;
-const uint8_t SM_DACT = 8;
-const uint8_t SM_SDIORD = 9;
-const uint8_t SM_SDISHARE = 10;
-const uint8_t SM_SDINEW = 11;
-const uint8_t SM_ADPCM = 12;
-const uint8_t SM_ADCPM_HP = 13;
-const uint8_t SM_LINE_IN = 14;
+typedef enum SCI_MODE: uint8_t {
+  DIFF = 0,
+  LAYER12 = 1,
+  RESET = 2,
+  OUTOFWAV = 3,
+  EARSPEAKER_LO = 4,
+  TESTS = 5,
+  STREAM = 6,
+  EARSPEAKER_HI = 7,
+  DACT = 8,
+  SDIORD = 9,
+  SDISHARE = 10,
+  SDINEW = 11,
+  ADPCM = 12,
+  ADCPM_HP = 13,
+  LINE_IN = 14,
+};
 
 uint16_t t, w;
 bool recordModeOn;
@@ -100,27 +97,24 @@ byte data[4];
 
 unsigned char db[512];
 
-void control_mode_on(void)
-{
+void control_mode_on(void) {
   digitalWrite(xDcs, HIGH);
   digitalWrite(xCs,LOW);
 }
 
-void await_data_request(void)
-{
+void await_data_request(void) {
   while (!digitalRead(xDreq));
 }
 
-void control_mode_off(void)
-{
+void control_mode_off(void) {
   digitalWrite(xCs, HIGH);
 }
 
-uint16_t read_register_my_own(uint8_t _reg)
-{
+uint16_t read_register_my_own(SCI_REGISTER _reg) {
+  // VS1003 SCI Read COmmand byte is 0x03
   while(!digitalRead(xDreq));
   digitalWrite(xCs, LOW);
-  mySPI.transfer(VS_READ_COMMAND);
+  mySPI.transfer(0x03);
   mySPI.transfer(_reg);
   unsigned char response1 = mySPI.transfer(0xFF);
   unsigned char response2 = mySPI.transfer(0xFF);
@@ -128,11 +122,11 @@ uint16_t read_register_my_own(uint8_t _reg)
   return ((unsigned int) response1 << 8) | (response2 & 0xFF);
 }
 
-void write_register(uint8_t _reg, uint16_t _value)
-{
+void write_register(uint8_t _reg, uint16_t _value) {
+  // VS1003 SCI Write Command byte is 0x02
   control_mode_on();
   delayMicroseconds(1); // tXCSS
-  mySPI.transfer(VS_WRITE_COMMAND); // Write operation
+  mySPI.transfer(0x02); // Write operation
   mySPI.transfer(_reg); // Which register
   mySPI.transfer(_value >> 8); // Send hi byte
   mySPI.transfer(_value & 0xff); // Send lo byte
@@ -141,24 +135,21 @@ void write_register(uint8_t _reg, uint16_t _value)
   control_mode_off();
 }
 
-void data_mode_on(void)
-{
+void data_mode_on(void) {
   digitalWrite(xCs, HIGH);
   digitalWrite(xDcs, LOW);
 }
 
-void data_mode_off(void)
-{
+void data_mode_off(void) {
   digitalWrite(xDcs, HIGH);
 }
 
-void setVolume(uint8_t vol)
-{
+void setVolume(uint8_t vol) {
   uint16_t value = vol;
   value <<= 8;
   value |= vol;
 
-  write_register(SCI_VOL, value); // VOL
+  write_register(SCI_REGISTER::VOL, value); // VOL
 }
 
 void setup() {
@@ -182,15 +173,13 @@ void setup() {
 
   digitalWrite(sdCs, HIGH);
 
-  while(!SD.begin(sdCs))
-  {
+  while(!SD.begin(sdCs)) {
     Serial.println("SD initialization failed..");
   }
 
   Serial.println("SD initialization successfull..");
 
-  if(SD.exists(fileName))
-  {
+  if(SD.exists(fileName)) {
     SD.remove(fileName);
   }
 
@@ -199,8 +188,7 @@ void setup() {
   myFile.write(RIFFHeader0fn, sizeof(RIFFHeader0fn));
 
   // Write '0' (0x30) from address 51 to 503 
-  for (int i = 0; i<452; i++)
-  {
+  for (int i = 0; i<452; i++) {
     myFile.write('0');
   }
 
@@ -211,17 +199,17 @@ void setup() {
   mySPI.begin();
   mySPI.beginTransaction(SPISettings(250000, MSBFIRST, SPI_MODE0));
 
-  write_register(SCI_VOL, 0x0000);
-  write_register(SCI_BASS, 0);
-  write_register(SCI_CLOCKF, 0x4430);
+  write_register(SCI_REGISTER::VOL, 0x0000);
+  write_register(SCI_REGISTER::BASS, 0);
+  write_register(SCI_REGISTER::CLOCKF, 0x4430);
 
-  write_register(SCI_AICTRL0, 12);
+  write_register(SCI_REGISTER::AICTRL0, 12);
   delay(100);
 
-  write_register(SCI_AICTRL1, 1024);
+  write_register(SCI_REGISTER::AICTRL1, 1024);
   delay(100);
 
-  write_register(SCI_MODE, 0x1804);
+  write_register(SCI_REGISTER::MODE, 0x1804);
 
   mySPI.endTransaction();
 
@@ -229,15 +217,13 @@ void setup() {
 
 }
 
-void updateAndCloseAudioFile()
-{
+void updateAndCloseAudioFile() {
   Serial.println(myFile.size());
   myFile.close();
   Serial.println("Recording off...");
   Serial.println("Closed the Audio file...");
 
-  if(!(myFile = SD.open(fileName, O_WRITE)))
-  {
+  if (!(myFile = SD.open(fileName, O_WRITE))) {
     Serial.println("Failed to open record file in O_WRITE mode");
   }
 
@@ -278,31 +264,24 @@ void updateAndCloseAudioFile()
 }
 
 void loop() {
-  
-  if(digitalRead(ctrlBtn))
-  {
+  if (digitalRead(ctrlBtn)) {
     ctrlBtnPressed = true;
     delay(50);
   }
   
-  else if(ctrlBtnPressed && !digitalRead(ctrlBtn))
-  {
+  else if(ctrlBtnPressed && !digitalRead(ctrlBtn)) {
     ctrlBtnReleased = true;
   }
 
-  if(ctrlBtnPressed && ctrlBtnReleased)
-  {
+  if (ctrlBtnPressed && ctrlBtnReleased) {
     ctrlBtnPressed = false;
     ctrlBtnReleased = false;
 
-    if(recordModeOn)
-    {
+    if (recordModeOn) {
       recordModeOn = false;
 
       updateAndCloseAudioFile();
-    }
-    else
-    {
+    } else {
       recordModeOn = true;
       Serial.println("Recording on...");
     }
@@ -310,16 +289,13 @@ void loop() {
     // Serial.println(recordModeOn);
   }
 
-  if(recordModeOn)
-  {
+  if (recordModeOn) {
     mySPI.beginTransaction(SPISettings(250000, MSBFIRST, SPI_MODE0));
-    t = read_register_my_own(SCI_HDAT1);
+    t = read_register_my_own(SCI_REGISTER::HDAT1);
 
-    while(t >= 256 && t < 896)
-    {
-      for(int i=0;i<512;i=i+2)
-      {
-        w = read_register_my_own(SCI_HDAT0);
+    while (t >= 256 && t < 896) {
+      for (int i=0;i<512;i=i+2) {
+        w = read_register_my_own(SCI_REGISTER::HDAT0);
         db[i] = w >> 8;
         db[i+1] = w & 0xFF;
       }
@@ -328,12 +304,9 @@ void loop() {
   
       myFile.write(db, sizeof(db));
 
-      t-=256;
+      t -= 256;
     }    
-  }
-  
-  else
-  {
+  } else {
     //Serial.println("Record mode off");
   }
 }
