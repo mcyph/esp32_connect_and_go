@@ -26,6 +26,7 @@
 
 #define LCD_W 84
 #define LCD_H 48
+#define LCD_PIXELS 4032
 
 class Nokia5110GrayscaleDisplay {
     private:
@@ -35,8 +36,7 @@ class Nokia5110GrayscaleDisplay {
         int sdinPin; // Data In
         int sclkPin; // Clock
 
-        byte g_bitmap[504 * 32];
-        size_t g_bitmap_len = 5544;
+        byte g_bitmap[LCD_PIXELS];
 
     public:
         Nokia5110GrayscaleDisplay(int scePin=7, int resetPin=6, int dcPin=5, int sdinPin=4, int sclkPin=3) {
@@ -53,7 +53,7 @@ class Nokia5110GrayscaleDisplay {
             pinMode(sclkPin, OUTPUT);
 
             digitalWrite(resetPin, LOW);
-            delay(10);
+            delay(1);
             digitalWrite(resetPin, HIGH);
 
             // See page 14 of https://sparkfun.com/datasheets/LCD/Monochrome/Nokia5110.pdf
@@ -66,23 +66,33 @@ class Nokia5110GrayscaleDisplay {
         }
 
         bool poll() {
-            // Move cursor to 0,0
-            writeRegister(LCD_C, 0b01000000);  // X
-            writeRegister(LCD_C, 0b10000000);  // Y
+            for (int i = 0; i < 12; i++) {
+                int line = 0;
+                for (int j = 0; j < LCD_PIXELS; j++) {
+                    if (j % (84*6) == 0) {
+                        // Move cursor to the start of the current line
+                        setCursorPos(0, line);
 
-            // Write data to LCD
-            digitalWrite(dcPin, LCD_D);
-            digitalWrite(scePin, LOW);
-            for (size_t i = 0; i < g_bitmap_len; i += 504) {
-                for (int j = 0; j < 504; ++j) {
-                    shiftOut(sdinPin, sclkPin, MSBFIRST, g_bitmap[i+j]);
+                        // Write data to LCD
+                        digitalWrite(dcPin, LCD_D);
+                        digitalWrite(scePin, LOW);
+                        line++;
+                    }
+                    shiftOut(sdinPin, sclkPin, MSBFIRST, 1);
                 }
+                digitalWrite(scePin, HIGH);
             }
-            digitalWrite(scePin, HIGH);
             return true;
         }
 
+        inline void setCursorPos(int x, int y) {
+            writeRegister(LCD_C, 0x80 | x);  // X
+            writeRegister(LCD_C, 0x40 | y);  // Y
+        }
+
         inline void writeRegister(byte dc, byte data) {
+            digitalWrite(scePin, HIGH);
+            digitalWrite(sclkPin, LOW);
             digitalWrite(dcPin, dc);
             digitalWrite(scePin, LOW);
             shiftOut(sdinPin, sclkPin, MSBFIRST, data);
@@ -90,11 +100,6 @@ class Nokia5110GrayscaleDisplay {
         }
 
         inline void putPixel(int x, int y, byte amount) {
-            int count = 0;
-            long j = (y * LCD_H) + x;
-            for (size_t i = 0; i < g_bitmap_len; i += 504) {
-                g_bitmap[i + j] = count >= amount ? 1 : 0; 
-                count++;
-            }
+            g_bitmap[x + (y * LCD_H)] = amount;
         }
 };
