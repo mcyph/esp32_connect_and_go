@@ -19,7 +19,6 @@
 //    misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
 
-#include <vector>
 #include <SPI.h>
 #include <Arduino.h>
 
@@ -37,6 +36,8 @@
 
 class Nokia5110GrayscaleDisplay {
     private:
+        SPIClass spiInst = SPIClass(HSPI);
+
         int scePin; // Chip Select
         int resetPin; // Reset
         int dcPin; // Mode Select
@@ -47,9 +48,6 @@ class Nokia5110GrayscaleDisplay {
 
     public:
         Nokia5110GrayscaleDisplay(int scePin, int resetPin, int dcPin, int sdinPin, int sclkPin) {
-            SPI.begin();
-            SPI.setClockDivider(SPI_CLOCK_DIV16);
-
             this->scePin = scePin;
             this->resetPin = resetPin;
             this->dcPin = dcPin;
@@ -62,9 +60,11 @@ class Nokia5110GrayscaleDisplay {
             pinMode(sdinPin, OUTPUT);
             pinMode(sclkPin, OUTPUT);
 
+            digitalWrite(scePin, LOW);
             digitalWrite(resetPin, LOW);
             delay(1);
             digitalWrite(resetPin, HIGH);
+            digitalWrite(scePin, HIGH);
 
             // See page 14 of https://sparkfun.com/datasheets/LCD/Monochrome/Nokia5110.pdf
             setContrast(50);
@@ -84,7 +84,13 @@ class Nokia5110GrayscaleDisplay {
             return true;
         }
 
+        int getBrightnessSteps() {
+            return BRIGHTNESS_STEPS;
+        }
+
         inline void pollStep(byte brightnessStep) {
+            acquireSPI();
+
             // Move cursor to the start of the current line
             setCursorPos(0, 0);
 
@@ -125,6 +131,11 @@ class Nokia5110GrayscaleDisplay {
          * Mode setters
          **********************************************************************/
 
+        void acquireSPI() {
+            SPI.begin(sclkPin, -1, sdinPin, scePin);
+            SPI.setClockDivider(SPI_CLOCK_DIV16);
+        }
+
         void setContrast(int amount) {
             writeRegister(LCD_C, 0x21);          // LCD Extended Commands.
             writeRegister(LCD_C, 0x80 | amount); // Set LCD Vop (Contrast).
@@ -163,6 +174,7 @@ class Nokia5110GrayscaleDisplay {
          **********************************************************************/
 
         inline void writeRegister(byte dc, byte data) {
+            acquireSPI();
             digitalWrite(dcPin, dc);
             digitalWrite(scePin, LOW);
             SPI.transfer(data);

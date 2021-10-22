@@ -1,6 +1,8 @@
 // https://circuitdigest.com/microcontroller-projects/esp32-real-time-clock-using-ds3231-module
 #include "RTClib.h";
 
+// SparkFun RV-8803
+
 class RTCBase {
     public:
         virtual DateTime getDateTime();
