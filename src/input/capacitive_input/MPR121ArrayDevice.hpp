@@ -3,73 +3,13 @@
 #include <string.h>;
 #include <Arduino.h>;
 #include "Adafruit_MPR121.h"
-
-using namespace std;
-
-class CapacitiveInputDeviceArrayBase {
-    public:
-        virtual bool poll();
-        virtual int getPressedButton();
-        virtual vector<vector<int>> getPressedButtons();
-};
-
-class TTP229Array: public CapacitiveInputDeviceArrayBase {
-    private:
-        int sclPin;
-        vector<int> sdoPins;
-        vector<vector<int>> pressedButtons;
-
-    public:
-        TTP229Array(int sclPin, vector<int> sdoPins) {
-            // https://electropeak.com/learn/interfacing-16-channel-ttp229-capacitive-touch-16-key-keypad-with-arduino/
-            pinMode(sclPin, OUTPUT);
-            for (int sdoPin: sdoPins) {  
-                pinMode(sdoPin, INPUT);
-            } 
-        }
-
-        bool poll() override {
-            // TODO: Test me!
-            for (vector<int> iPressedButtons: pressedButtons) {
-                if (!iPressedButtons.empty()) {
-                    iPressedButtons.clear();
-                }
-            }
-            for (int i=0; i<16; i++) {
-                digitalWrite(sclPin, LOW); 
-                for (int j=0; j<sdoPins.size(); i++) {
-                    if (!digitalRead(sdoPins[i])) {
-                        pressedButtons[j].push_back(i);
-                    }
-                }
-                digitalWrite(sclPin, HIGH);
-            }
-            return true;
-        }
-
-        /**
-         * 
-         */
-        int getPressedButton() override {
-            // Get the first pressed button only
-            for (vector<int> iPressedButtons: pressedButtons) {
-                if (iPressedButtons.size() > 0) {
-                    return iPressedButtons[0];
-                }
-            }
-            return -1;
-        }
-
-        vector<vector<int>> getPressedButtons() override {
-            return this->pressedButtons;
-        }
-};
+#include "CapacitiveInputDeviceArrayBase.hpp"
 
 #ifndef _BV
 #define _BV(bit) (1 << (bit)) 
 #endif
 
-class MPR121Array: public CapacitiveInputDeviceArrayBase {
+class MPR121ArrayDevice: public CapacitiveInputDeviceArrayBase {
     private:
         int sclPin;
         vector<int> sdoPins;
@@ -82,7 +22,7 @@ class MPR121Array: public CapacitiveInputDeviceArrayBase {
         uint16_t currtouched = 0;
 
     public:
-        MPR121Array(int sclPin, vector<int> sdoPins) {
+        MPR121ArrayDevice(int sclPin, vector<int> sdoPins) {
             // You can have up to 4 on one i2c bus but one is enough for testing!
             cap = Adafruit_MPR121();
 
