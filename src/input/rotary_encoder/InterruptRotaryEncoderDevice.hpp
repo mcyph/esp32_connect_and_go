@@ -1,7 +1,7 @@
 #include "../../misc/Callback.hpp"
-#include "RotaryEncoderDevice.hpp"
+#include "RotaryEncoderDeviceBase.hpp"
 
-class InterruptRotaryEncoderDevice: public RotaryEncoderDevice {
+class InterruptRotaryEncoderDevice: public RotaryEncoderDeviceBase {
   private:
     voidCCallback callback;
 
@@ -18,13 +18,15 @@ class InterruptRotaryEncoderDevice: public RotaryEncoderDevice {
     }
 
   public:
-    InterruptRotaryEncoderDevice(int pinA, int pinB): RotaryEncoderDevice(pinA, pinB) {
+    InterruptRotaryEncoderDevice(int pinA, int pinB): RotaryEncoderDeviceBase(pinA, pinB) {
       callback = makeCCallback(&InterruptRotaryEncoderDevice::onChange, this);
       attachInterrupt(digitalPinToInterrupt(pinA), callback, CHANGE);
       attachInterrupt(digitalPinToInterrupt(pinB), callback, CHANGE);
     }
     
-    void poll() {}
+    void poll() {
+      // Implementation in `onChange`
+    }
 
     int read() {
       return currentPos;

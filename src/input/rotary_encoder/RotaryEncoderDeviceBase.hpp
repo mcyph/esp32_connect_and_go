@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <functional>
 
-class RotaryEncoderDevice {
+class RotaryEncoderDeviceBase {
   protected:
     int val;
     int pinA = 3;
@@ -11,7 +11,7 @@ class RotaryEncoderDevice {
     int n = LOW;
   
   public:
-    RotaryEncoderDevice(int pinA, int pinB) {
+    RotaryEncoderDeviceBase(int pinA, int pinB) {
       this->pinA = pinA;
       this->pinB = pinB;
 

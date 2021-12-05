@@ -1,9 +1,9 @@
 #include <Arduino.h>
-#include "RotaryEncoderDevice.hpp"
+#include "RotaryEncoderDeviceBase.hpp"
 
-class PollingRotaryEncoder: public RotaryEncoderDevice {
+class PollingRotaryEncoder: public RotaryEncoderDeviceBase {
   public:
-    PollingRotaryEncoder(int pinA, int pinB): RotaryEncoderDevice(pinA, pinB) {}
+    PollingRotaryEncoder(int pinA, int pinB): RotaryEncoderDeviceBase(pinA, pinB) {}
     
     void poll() {
       n = digitalRead(pinA);

@@ -21,27 +21,36 @@ class CounterBase {
       this->maxValue = maxValue;
     }
 
-    virtual void increment(int by=1);
-    virtual void decrement(int by=1);
+    //=======================================================
+    // Getters
+    //=======================================================
 
-    float toFloat() {
+    long getValue() {
+      return value;
+    }
+
+    float getFloatValue() {
       return (value - minValue) / float(maxValue - minValue);
     }
 
-    double toDouble() {
+    double getDoubleValue() {
       return (value - minValue) / double(maxValue - minValue);
     }
 
-    unsigned char toPercent() {
+    unsigned char getPercentValue() {
       // Some microcontrollers don't have native floating point capabilities 
       // (e.g. raspberry pi pico) - this returns between 0 and 100 for faster 
       // code in those cases
       return (value - minValue) * 100 / (maxValue - minValue);
     }
 
-    long getValue() {
-      return value;
-    }
+    //=======================================================
+    // Setters/Modifiers
+    //=======================================================
+
+    // Must be overridden in subclasses
+    virtual void increment(int by=1);
+    virtual void decrement(int by=1);
 
     bool setValue(long v) {
       if (v < minValue || v > maxValue) {

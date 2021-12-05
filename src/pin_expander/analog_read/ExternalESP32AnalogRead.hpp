@@ -1,4 +1,4 @@
-class ESP32_AD: public AnalogWriteBase, 
+class LocalESP32_AD: public AnalogWriteBase, 
                 public AnalogReadBase, 
                 public DigitalWriteBase,
                 public DigitalReadBase {

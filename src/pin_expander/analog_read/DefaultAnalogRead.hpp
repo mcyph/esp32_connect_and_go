@@ -1,0 +1,3 @@
+#ifdef RP2040
+ANALOG_PINS = {26, 27, 28};
+INTERRUPT_PINS = {};
