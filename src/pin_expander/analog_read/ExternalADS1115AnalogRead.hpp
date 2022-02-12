@@ -1,25 +1,27 @@
-class ADS1115: public AnalogReadBase {
+#include "AnalogReadBase.hpp"
+#include <Adafruit_ADS1015.h>
+
+// 32767 max - but can give negative voltage values(!)
+
+class ExternalADS1115AnalogRead: public AnalogReadBase {
+    private:
+        Adafruit_ADS1115 ads;
+    
     public:
-        long getNumAnalogInputPins() {
-            return 4;
+        ExternalADS1115AnalogRead(int logicalPinNumberStart, 
+                                  int gain=GAIN_ONE, 
+                                  int address=0x48): 
+            AnalogReadBase(logicalPinNumberStart, 
+                           vector<int>{32767, 32767, 32767, 32767},
+                           vector<int>{-32768, -32768, -32768, -32768}) {
+            ads = Adafruit_ADS1115(address);
+            ads.setGain(gain);
+            ads.begin();
         }
 
-        int* getAnalogInputPinNums() {
-            static int pinNums[] = {
-                0, 1, 2, 3
-            };
-            return pinNums;
-        }
-
-        long getAnalogInputMaxValue(int pinNum) {
-            return 65535;
-        };
-
-        float analogReadFloat(int pinNum) {
-            return analogReadLong(pinNum) / (float)getAnalogInputMaxValue(pinNum);
-        }
-
-        long analogReadLong(int pinNum) {
-            // TODO!
+        int getValue(int pin) override {
+            return analogRead(pin);
+        } {
+            return ads.readADC_SingleEnded(); // CHECK ME!!
         }
 };

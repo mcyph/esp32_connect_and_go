@@ -5,10 +5,12 @@ using std::vector;
 
 class AnalogWriteBase {
     private:
+        int logicalPinNumberStart;
         vector<int> pinMaximums;
 
     public:
-        AnalogWriteBase(vector<int> pinMaximums) {
+        AnalogWriteBase(int logicalPinNumberStart, vector<int> pinMaximums) {
+            this->logicalPinNumberStart = logicalPinNumberStart;
             this->pinMaximums = pinMaximums;
         }
 
